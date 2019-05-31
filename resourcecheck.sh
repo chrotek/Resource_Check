@@ -19,7 +19,8 @@ freeMemory=$(grep "MemFree" /proc/meminfo | awk {'print $2'})
 availableMemory=$(grep "MemAvailable" /proc/meminfo | awk {'print $2'})
 usedMemory=$((totalMemory - availableMemory))
 # usedMemoryPercent=$(((usedMemory / totalMemory)*100))
-usedMemoryPercent=$(printf '%.3f\n' $(echo "$usedMemory / $totalMemory" | bc -l ))
+usedMemoryPercent_bc=$(printf '%.3f\n' $(echo "$usedMemory / $totalMemory" | bc -l ))
+usedMemoryPercent=$(printf "\n" |awk "{printf ($usedMemory / $totalMemory)*100 ;exit}")
 ### CPU
 
 ### DISK Space
@@ -33,9 +34,16 @@ printf "Available Memory: %s \n" "$availableMemory"
 printf "Used Memory     : %s \n" "$usedMemory"
 printf "Used Memory %%   : %s \n" "$usedMemoryPercent"
 
+
+
 #
 
 printf "\n" |awk "{printf $usedMemory / $totalMemory ;exit}"
+echo
+printf "\n" |awk "{printf ($usedMemory / $totalMemory)*100 ;exit}"
+echo
+
+
 
 
 
