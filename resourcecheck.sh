@@ -12,9 +12,14 @@
 
 ## Live 
 ### Memory
-# Total Memory in kB
-totalMemory=$(grep "MemTotal" /proc/meminfo | awk {'print $2'})
 
+# Memory stats in kB
+totalMemory=$(grep "MemTotal" /proc/meminfo | awk {'print $2'})
+freeMemory=$(grep "MemFree" /proc/meminfo | awk {'print $2'})
+availableMemory=$(grep "MemAvailable" /proc/meminfo | awk {'print $2'})
+usedMemory=$((totalMemory - availableMemory))
+# usedMemoryPercent=$(((usedMemory / totalMemory)*100))
+usedMemoryPercent=$(printf '%.3f\n' $(echo "$usedMemory / $totalMemory" | bc -l ))
 ### CPU
 
 ### DISK Space
@@ -22,4 +27,16 @@ totalMemory=$(grep "MemTotal" /proc/meminfo | awk {'print $2'})
 
 
 # DEBUG Section
-printf "Total Memory: %s \n" "$totalMemory"
+printf "Total Memory    : %s \n" "$totalMemory"
+printf "Free Memory     : %s \n" "$freeMemory"
+printf "Available Memory: %s \n" "$availableMemory"
+printf "Used Memory     : %s \n" "$usedMemory"
+printf "Used Memory %%   : %s \n" "$usedMemoryPercent"
+
+#
+
+printf "\n" |awk "{printf $usedMemory / $totalMemory ;exit}"
+
+
+
+
