@@ -21,18 +21,32 @@ usedMemory=$((totalMemory - availableMemory))
 #usedMemoryPercent_bc=$(printf '%.3f\n' $(echo "$usedMemory / $totalMemory" | bc -l ))
 #usedMemoryPercent=$(printf "\n" |awk "{printf ($usedMemory / $totalMemory)*100}")
 usedMemoryPercent=$(printf "\n" |awk "{printf ($usedMemory / $totalMemory)*100 ;exit}"| awk '{printf "%.2f\n", $1}')
+freeMemoryPercent=$(100 - usedMemoryPercent)
 
 ### CPU
 
 ### DISK Space
+disknames=$(lsblk -nl | awk {'print $7'} | grep -vE 'SWAP|/boot/'| awk NF | sort -n)
+
+
+# echo $disknames
+
+for disk in $disknames;do
+    # echo "DISK"$disk
+    percentfull=$(df -h $disk | grep -v "Filesystem"| awk {'print $5'})
+    printf "%s \t %s \n" "$disk" "$percentfull"
+    # echo "FILL"$percentfull
+done
 
 
 
 # DEBUG Section
-printf "Total Memory    : %s \n" "$totalMemory"
-printf "Free Memory     : %s \n" "$freeMemory"
-printf "Available Memory: %s \n" "$availableMemory"
-printf "Used Memory     : %s \n" "$usedMemory"
-printf "Used Memory %%   : %s%% \n" "$usedMemoryPercent"
+
+printf "%s Memory %s \n" "-----" "-----"
+printf "Total     : %s \n" "$totalMemory"
+printf "Free      : %s \n" "$freeMemory"
+printf "Available : %s \n" "$availableMemory"
+printf "Used      : %s \n" "$usedMemory"
+printf "Used %%    : %s%% \n" "$usedMemoryPercent"
 
 
