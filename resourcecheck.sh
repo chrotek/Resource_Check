@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 
-# Check packages installed
+# Colors
+LIGHTRED='\033[1;31m'
+GREEN='\033[0;32m'    
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'    
+SET='\033[0m'
+COLOR=$SET
+
+#echo "${COLOR}COLOR${SET}"
+
+#Check packages installed
 ## sar
 
 # Find sar logs
@@ -34,6 +44,7 @@ disknames=$(lsblk -nl | awk {'print $7'} | grep -vE 'SWAP|/boot/'| awk NF | sort
 for disk in $disknames;do
     # echo "DISK"$disk
     percentfull=$(df -h $disk | grep -v "Filesystem"| awk {'print $5'})
+    # if disk is LOW,MEDIUM,HIGH full, set COLOR to RED,YELLOW or GREEN
     printf "%s \t %s \n" "$disk" "$percentfull"
     # echo "FILL"$percentfull
 done
