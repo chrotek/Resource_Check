@@ -8,7 +8,7 @@ BLUE='\033[0;34m'
 SET='\033[0m'
 COLOR=$SET
 
-color_ranger() {
+color_percent() {
 
   inputnumber=$1
   if [ $(awk "BEGIN{print($inputnumber>50);exit}") -eq 0 ]
@@ -23,6 +23,7 @@ color_ranger() {
   fi
   printf "${COLOR}%s${SET}\n" "$inputnumber" 
 }
+
 
 #Check packages installed
 ## sar
@@ -42,24 +43,17 @@ totalMemory=$(grep "MemTotal" /proc/meminfo | awk {'print $2'})
 freeMemory=$(grep "MemFree" /proc/meminfo | awk {'print $2'})
 availableMemory=$(grep "MemAvailable" /proc/meminfo | awk {'print $2'})
 usedMemory=$((totalMemory - availableMemory))
-#usedMemoryPercent_bc=$(printf '%.3f\n' $(echo "$usedMemory / $totalMemory" | bc -l ))
-#usedMemoryPercent=$(printf "\n" |awk "{printf ($usedMemory / $totalMemory)*100}")
 usedMemoryPercent=$(printf "\n" |awk "{printf ($usedMemory / $totalMemory)*100 ;exit}"| awk '{printf "%.2f\n", $1}')
 freeMemoryPercent=$('100' - $usedMemoryPercent)
 
 ### CPU
 
 ### DISK Space
-disknames=$(lsblk -nl | awk {'print $7'} | grep -vE 'SWAP|/boot/'| awk NF | sort -n)
+diskmounts=$(lsblk -nl | awk {'print $7'} | grep -vE 'SWAP|/boot/'| awk NF | sort -n)
 
-
-# echo $disknames
-
-for disk in $disknames;do
-    # echo "DISK"$disk
+for disk in $diskmounts;do
     percentfull=$(df -h $disk | grep -v "Filesystem"| awk {'print $5'} | tr -d "%")
-    # if disk is LOW,MEDIUM,HIGH full, set COLOR to RED,YELLOW or GREEN
-    printf "%-20s| %-5s%% \n" "$disk" "$(color_ranger $percentfull)"
+    printf "%-20s| %-5s%% \n" "$disk" "$(color_percent $percentfull)"
 done
 
 
@@ -71,6 +65,4 @@ printf "Total     : %s \n" "$totalMemory"
 printf "Free      : %s \n" "$freeMemory"
 printf "Available : %s \n" "$availableMemory"
 printf "Used      : %s \n" "$usedMemory"
-printf "Used %%    : %s%% \n" "$(color_ranger $usedMemoryPercent)"
-
-printf "DEBUG     : %s \n" "$(color_ranger 90)"
+printf "Used %%    : %s%% \n" "$(color_percent $usedMemoryPercent)"
