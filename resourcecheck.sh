@@ -9,20 +9,20 @@ SET='\033[0m'
 COLOR=$SET
 
 color_ranger() {
+
   inputnumber=$1
-  if [ "$inputnumber" -le 50 ]
+  if [ $(awk "BEGIN{print($inputnumber>50);exit}") -eq 0 ]
   then
       COLOR=$GREEN
-  elif [ "$inputnumber" -ge 50 ] && [ "$inputnumber" -le 89 ]
+  elif [ $(awk "BEGIN{print($inputnumber<50);exit}") -eq 0 ] && [ $(awk "BEGIN{print($inputnumber>90);exit}") -eq 0 ]
   then
       COLOR=$YELLOW
-  elif [ "$inputnumber" -ge 90 ]
+  elif [ $(awk "BEGIN{print($inputnumber<89);exit}") -eq 0 ]
   then
-      COLOR=$RED
+      COLOR=$LIGHTRED
   fi
-  printf "${COLOR}$inputnumber${SET}\n"
+  printf "${COLOR}%s${SET}\n" "$inputnumber" 
 }
-
 
 #Check packages installed
 ## sar
@@ -44,8 +44,8 @@ availableMemory=$(grep "MemAvailable" /proc/meminfo | awk {'print $2'})
 usedMemory=$((totalMemory - availableMemory))
 #usedMemoryPercent_bc=$(printf '%.3f\n' $(echo "$usedMemory / $totalMemory" | bc -l ))
 #usedMemoryPercent=$(printf "\n" |awk "{printf ($usedMemory / $totalMemory)*100}")
-usedMemoryPercent=$(printf "\n" |awk "{printf ($usedMemory / $totalMemory)*100 ;exit}"| awk '{printf "%.f\n", $1}')
-freeMemoryPercent=$(100 - usedMemoryPercent)
+usedMemoryPercent=$(printf "\n" |awk "{printf ($usedMemory / $totalMemory)*100 ;exit}"| awk '{printf "%.2f\n", $1}')
+freeMemoryPercent=$('100' - $usedMemoryPercent)
 
 ### CPU
 
@@ -59,7 +59,7 @@ for disk in $disknames;do
     # echo "DISK"$disk
     percentfull=$(df -h $disk | grep -v "Filesystem"| awk {'print $5'} | tr -d "%")
     # if disk is LOW,MEDIUM,HIGH full, set COLOR to RED,YELLOW or GREEN
-    printf "%s \t %s%% \n" "$disk" "$(color_ranger $percentfull)"
+    printf "%-20s| %-5s%% \n" "$disk" "$(color_ranger $percentfull)"
 done
 
 
@@ -73,4 +73,4 @@ printf "Available : %s \n" "$availableMemory"
 printf "Used      : %s \n" "$usedMemory"
 printf "Used %%    : %s%% \n" "$(color_ranger $usedMemoryPercent)"
 
-
+printf "DEBUG     : %s \n" "$(color_ranger 90)"
