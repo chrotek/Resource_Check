@@ -24,6 +24,10 @@ color_percent() {
   printf "${COLOR}%s${SET}\n" "$inputnumber" 
 }
 
+kb_mb_convert() {
+  output=$(($1/1024))
+  printf $output
+}
 
 #Check packages installed
 ## sar
@@ -42,27 +46,42 @@ color_percent() {
 totalMemory=$(grep "MemTotal" /proc/meminfo | awk {'print $2'})
 freeMemory=$(grep "MemFree" /proc/meminfo | awk {'print $2'})
 availableMemory=$(grep "MemAvailable" /proc/meminfo | awk {'print $2'})
-usedMemory=$((totalMemory - availableMemory))
-usedMemoryPercent=$(printf "\n" |awk "{printf ($usedMemory / $totalMemory)*100 ;exit}"| awk '{printf "%.2f\n", $1}')
-freeMemoryPercent=$('100' - $usedMemoryPercent)
+usedMemory=$(awk "BEGIN{printf ($totalMemory - $availableMemory);exit}")
+usedMemoryPercent=$(awk "BEGIN{printf ($usedMemory / $totalMemory)*100 ;exit}"| awk '{printf "%.2f\n", $1}')
+freeMemoryPercent=$(awk "BEGIN{printf ($usedMemoryPercent - $totalMemory);exit}")
 
 ### CPU
+cpuCoreCount=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}')
+loadOne=$(cat /proc/loadavg | awk {'print $1'})
+loadFive=$(cat /proc/loadavg | awk {'print $2'})
+loadFifteen=$(cat /proc/loadavg | awk {'print $3'})
+# Easy Switch between 1,5,15 mins loadavg
+cpuLoad=$loadFive
+## Load to percent
+# Do the math: count/total
+cpuLoadPercent1=$(awk "BEGIN{printf ($loadOne / $cpuCoreCount);exit}")
+# Convert to decimal
+cpuLoadPercent=$(awk "BEGIN{printf ($cpuLoadPercent1*100);exit}")
+
+# Print Section
+
+printf "%s Memory %s \n" "---" "---"
+printf "Total : %s Mb\n" "$(kb_mb_convert $totalMemory)"
+printf "Used  : %s Mb\n" "$(kb_mb_convert $usedMemory)"
+printf "Used %%: %s%% \n" "$(color_percent $usedMemoryPercent)"
+
+printf "%s CPU %s\n" "---" "---"
+printf "Cores : %s\n" "$cpuCoreCount"
+printf "Load  : %s\n" "$cpuLoad"
+printf "Load%% : %s%%\n" "$(color_percent $cpuLoadPercent)" 
 
 ### DISK Space
 diskmounts=$(lsblk -nl | awk {'print $7'} | grep -vE 'SWAP|/boot/'| awk NF | sort -n)
 
+printf "%s Disks %s\n" "---" "---"
 for disk in $diskmounts;do
     percentfull=$(df -h $disk | grep -v "Filesystem"| awk {'print $5'} | tr -d "%")
+    # can we maybe work out the longest mount name and change the buffer accordingly?
     printf "%-20s| %-5s%% \n" "$disk" "$(color_percent $percentfull)"
 done
 
-
-
-# DEBUG Section
-
-printf "%s Memory %s \n" "-----" "-----"
-printf "Total     : %s \n" "$totalMemory"
-printf "Free      : %s \n" "$freeMemory"
-printf "Available : %s \n" "$availableMemory"
-printf "Used      : %s \n" "$usedMemory"
-printf "Used %%    : %s%% \n" "$(color_percent $usedMemoryPercent)"
