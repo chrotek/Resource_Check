@@ -14,6 +14,12 @@ giveUsageThenQuit() {
   printf "USAGE: %s <options>
   Possible Options :
   -n now - print current resources
+  -t timespan - print average consumption for an amount of time
+    Required options for timespan:
+    -d - day
+    -w - week
+    -m - month
+    -l x - last x days
   " "$0"
   exit 1
 }
@@ -63,7 +69,7 @@ while getopts 'ntd:' OPTION; do
       ## Live
       ### Memory
       
-      # Memory stats in kB
+      # Memory stats in kB, using awk because bash doesn't have a tool for floating point calculations. (i think?)
       totalMemory=$(grep "MemTotal" /proc/meminfo | awk {'print $2'})
       freeMemory=$(grep "MemFree" /proc/meminfo | awk {'print $2'})
       availableMemory=$(grep "MemAvailable" /proc/meminfo | awk {'print $2'})
@@ -112,8 +118,8 @@ while getopts 'ntd:' OPTION; do
       shift "$(($OPTIND -1))"
       TIMESPAN=$*
       printf "T option , ARG: %s, extras: $TIMESPAN \n" "$OPTARG"
-
-      while getopts 'd w m' TIMESPAN; do
+      echo "timespan :"$TIMESPAN":"
+      while getopts 'd w m l:' TIMESPAN; do
         case "$TIMESPAN" in
           d)
             printf "day\n"
@@ -132,8 +138,13 @@ while getopts 'ntd:' OPTION; do
             giveUsageThenQuit
             ;;
         esac
-      done ;;
-      
+######################################################BROKEN, FIX LATER
+#      if [ -z "$TIMESPAN" ]
+#      then
+#	printf "t option given, but no timespan"
+#	exit
+#      fi
+      done;;     
     d)
       printf "D option , ARG: %s" "$OPTARG"
 
