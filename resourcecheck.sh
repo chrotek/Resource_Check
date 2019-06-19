@@ -11,7 +11,7 @@ SET='\033[0m'
 COLOR=$SET
 
 giveUsageThenQuit() {
-  printf "USAGE: %s <options>
+  printf "\nUSAGE: %s <options>
   Possible Options :
   -n now - print current resources
   -t timespan - print average consumption for an amount of time
@@ -20,7 +20,7 @@ giveUsageThenQuit() {
     -w - week
     -m - month
     -l x - last x days
-  " "$0"
+  \n" "$0"
   exit 1
 }
 
@@ -61,7 +61,7 @@ kb_mb_convert() {
 # Check resources
 
 
-while getopts 'ntd:' OPTION; do
+while getopts 'nt' OPTION; do
   case "$OPTION" in
     n)
       printf "N option , ARG: %s" "$OPTARG"
@@ -108,7 +108,7 @@ while getopts 'ntd:' OPTION; do
       printf "%s Disks %s\n" "---" "---"
       for disk in $diskmounts;do
           percentfull=$(df -h $disk | grep -v "Filesystem"| awk {'print $5'} | tr -d "%")
-          # can we maybe work out the longest mount name and change the buffer accordingly?
+          # can we maybe work out the longest mount name and change the buffer accordingly? ################################################# 
           printf "%-20s| %-5s%% \n" "$disk" "$(color_percent $percentfull)"
       done
 
@@ -117,38 +117,42 @@ while getopts 'ntd:' OPTION; do
     t)
       shift "$(($OPTIND -1))"
       TIMESPAN=$*
-      printf "T option , ARG: %s, extras: $TIMESPAN \n" "$OPTARG"
-      echo "timespan :"$TIMESPAN":"
+      printf "T option , ARG: %s, extras: $TIMESPAN \n" "$OPTARG" # DEBUG
+
+      if [ -z "$TIMESPAN" ]
+      then
+	printf "t option given, but no timespan specified\n"
+        giveUsageThenQuit
+	exit
+      fi     
+
       while getopts 'd w m l:' TIMESPAN; do
         case "$TIMESPAN" in
           d)
             printf "day\n"
+	    dayCount=1
             ;;
       
           w)
             printf "week\n"
-      
+            dayCount=7
             ;;
       
           m)
             printf "month\n"
-      
+            dayCount=31
             ;;
+	  l)
+	    dayCount=$OPTARG
+            printf "last x days %s\n" "$dayCount"
+	    ;;
           ?)
             giveUsageThenQuit
             ;;
         esac
-######################################################BROKEN, FIX LATER
-#      if [ -z "$TIMESPAN" ]
-#      then
-#	printf "t option given, but no timespan"
-#	exit
-#      fi
+	printf "DEBUG, daycount %s" "$dayCount"
+	# rest of timespan code here
       done;;     
-    d)
-      printf "D option , ARG: %s" "$OPTARG"
-
-      ;;
     ?)
       giveUsageThenQuit
       ;;
