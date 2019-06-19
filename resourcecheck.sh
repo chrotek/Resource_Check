@@ -57,10 +57,13 @@ kb_mb_convert() {
 ## Possible locations:
 ### /var/log/sysstat
 ##v# /var/log/sa
+if [ $# -eq 0 ]
+then
+    printf "No Argument given!\n"
+    giveUsageThenQuit
+fi
 
 # Check resources
-
-
 while getopts 'nt' OPTION; do
   case "$OPTION" in
     n)
@@ -150,8 +153,21 @@ while getopts 'nt' OPTION; do
             giveUsageThenQuit
             ;;
         esac
-	printf "DEBUG, daycount %s" "$dayCount"
+#	printf "DEBUG, daycount %s" "$dayCount" #DEBUG
+	
+	# Work out the date range from daycount
+	todayDate=$(date '+%d %B')
+	todayDateNum=$(date '+%d')
+	startDate=$(date --date="$dayCount days ago" '+%d %B')
+	startDateNum=$(date --date="$dayCount days ago" '+%d')
+
+	printf "Date Range: %s - %s \n" "$startDate" "$todayDate"
+#	printf "Date Range: %s - %s \n" "$startDateNum" "$todayDateNum" #DEBUG
+
+
 	# rest of timespan code here
+	
+
       done;;     
     ?)
       giveUsageThenQuit
