@@ -189,11 +189,35 @@ while getopts 'nt' OPTION; do
 
 	printf "Average Resource Consumption for Date Range: %s - %s \n" "$startDate" "$todayDate"
 
+	# Calculate Average Resource consumption from specified timespan
+	# CPU Load
+
+	# Memory
+	calculateAverageUsedMemory() {
+          if [ $startDateNum -gt $todayDateNum ]
+          then
+          #    printf "%s is more than %s!\n" "$startDateNum" "$todayDateNum" #DEBUG
+              for i in $(eval echo "{$startDateNum..31} {1..$todayDateNum}");do
+                      #echo "Day"$i
+                      sar -r -f /var/log/sysstat/sa$i 2>/dev/null | grep Average
+              done
+          
+          else [ $startDateNum -gt $todayDateNum ]
+          #    printf "Less than\n" #DEBUG
+              for i in $(eval echo "{$startDateNum..$todayDateNum}");do
+                      #echo "Day"$i
+                      sar -r -f /var/log/sysstat/sa$i 2>/dev/null | grep Average
+              done
+          fi | awk '{sum = $2+$5+$6} ; { total += sum; count++ } END { print total/count }'
+	}
+	
+	# Dump the info
 	# CPU
 
 	# Memory
         printf "%s Memory %s \n" "---" "---"
         printf "Total : %s Mb\n" "$(kb_mb_convert $totalMemory)"
+	printf "Free Memory : %s\n" "$(kb_mb_convert $(calculateAverageUsedMemory))"
 
         # printf "Used  : %s Mb\n" "$(kb_mb_convert $usedMemory)"
         # printf "Used %%: %s%% \n" "$(color_percent $usedMemoryPercent)"
