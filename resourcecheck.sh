@@ -44,36 +44,46 @@ color_percent() {
   # Print the colored number, and set color back to normal
   printf "${COLOR}%s${SET}\n" "$inputnumber" 
 }
+
 # Convert Kb to Mb
 kb_mb_convert() {
   output=$(($1/1024))
   printf $output
 }
 
-#Check packages installed
-## sar
-
-# Find sar logs
-## Possible locations:
-### /var/log/sysstat
-##v# /var/log/sa
+# Check some args were supplied
 if [ $# -eq 0 ]
 then
     printf "No Argument given!\n"
     giveUsageThenQuit
 fi
 
+# Check disk usage
+
+check_disk_usage() {
+  diskmounts=$(lsblk -nl | awk {'print $7'} | grep -vE 'SWAP|/boot/'| awk NF | sort -n)
+  printf "%s Disks (%% Full) %s\n" "---" "---"
+  for disk in $diskmounts;do
+      percentfull=$(df -h $disk | grep -v "Filesystem"| awk {'print $5'} | tr -d "%")
+      # can we maybe work out the longest mount name and change the buffer accordingly? #################################################
+      printf "%-20s| %-5s%% \n" "$disk" "$(color_percent $percentfull)"
+  done
+}
+
+# Common Variables
+totalMemory=$(grep "MemTotal" /proc/meminfo | awk {'print $2'})
+
 # Check resources
 while getopts 'nt' OPTION; do
   case "$OPTION" in
     n)
-      printf "N option , ARG: %s" "$OPTARG"
+      printf "N option , ARG: %s \n" "$OPTARG" # DEBUG
 
       ## Live
       ### Memory
       
-      # Memory stats in kB, using awk because bash doesn't have a tool for floating point calculations. (i think?)
-      totalMemory=$(grep "MemTotal" /proc/meminfo | awk {'print $2'})
+      # Memory stats in kB, using awk because bash doesn't have a tool for floating point calculations.
+      # totalMemory=$(grep "MemTotal" /proc/meminfo | awk {'print $2'}) # Moved to common variables
       freeMemory=$(grep "MemFree" /proc/meminfo | awk {'print $2'})
       availableMemory=$(grep "MemAvailable" /proc/meminfo | awk {'print $2'})
       usedMemory=$(awk "BEGIN{printf ($totalMemory - $availableMemory);exit}")
@@ -106,15 +116,7 @@ while getopts 'nt' OPTION; do
       printf "Load%% : %s%%\n" "$(color_percent $cpuLoadPercent)"
       
       ### DISK Space
-      diskmounts=$(lsblk -nl | awk {'print $7'} | grep -vE 'SWAP|/boot/'| awk NF | sort -n)
-      
-      printf "%s Disks %s\n" "---" "---"
-      for disk in $diskmounts;do
-          percentfull=$(df -h $disk | grep -v "Filesystem"| awk {'print $5'} | tr -d "%")
-          # can we maybe work out the longest mount name and change the buffer accordingly? ################################################# 
-          printf "%-20s| %-5s%% \n" "$disk" "$(color_percent $percentfull)"
-      done
-
+      check_disk_usage
       ;;
 
     t)
@@ -128,6 +130,23 @@ while getopts 'nt' OPTION; do
         giveUsageThenQuit
 	exit
       fi     
+
+      # Check SAR installed   # DEBUG
+
+      # Find Sar Logs
+      sar_log_locations="
+                         /var/log/sysstat
+                         /var/log/sa
+                         /fake/path
+                        "
+
+      for dir in $sar_log_locations; do
+          if [ -d $dir ]; then
+              echo "Dir $dir exists" # DEBUG
+	      sar_log_path=$dir
+          fi
+      done
+      echo "sar logs in $sar_log_path" # DEBUG
 
       while getopts 'd w m l:' TIMESPAN; do
         case "$TIMESPAN" in
@@ -153,20 +172,36 @@ while getopts 'nt' OPTION; do
             giveUsageThenQuit
             ;;
         esac
-#	printf "DEBUG, daycount %s" "$dayCount" #DEBUG
-	
+
+	# Confirm we actually have logs for the amount of days given
+        dayLogCount=$(ls /var/log/sysstat/sa* -l | egrep 'sa[0-9][0-9]' | wc -l)
+        if [ $dayLogCount -lt $dayCount ]
+        then
+            printf "You Requested %s days of logs, but the system only has %s days stored.\nExiting" "$dayCount" "$dayLogCount"
+            exit 1
+        fi
+
 	# Work out the date range from daycount
 	todayDate=$(date '+%d %B')
 	todayDateNum=$(date '+%d')
 	startDate=$(date --date="$dayCount days ago" '+%d %B')
 	startDateNum=$(date --date="$dayCount days ago" '+%d')
 
-	printf "Date Range: %s - %s \n" "$startDate" "$todayDate"
-#	printf "Date Range: %s - %s \n" "$startDateNum" "$todayDateNum" #DEBUG
+	printf "Average Resource Consumption for Date Range: %s - %s \n" "$startDate" "$todayDate"
+
+	# CPU
+
+	# Memory
+        printf "%s Memory %s \n" "---" "---"
+        printf "Total : %s Mb\n" "$(kb_mb_convert $totalMemory)"
+
+        # printf "Used  : %s Mb\n" "$(kb_mb_convert $usedMemory)"
+        # printf "Used %%: %s%% \n" "$(color_percent $usedMemoryPercent)"
+
+	# DISK Space
+        check_disk_usage
 
 
-	# rest of timespan code here
-	
 
       done;;     
     ?)
