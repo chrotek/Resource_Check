@@ -194,6 +194,8 @@ while getopts 'nt' OPTION; do
 
 	# Memory
 	calculateAverageUsedMemory() {
+#	  printf "calculateAverageUsedMemory for %s - %s \n" "$startDate" "$todayDate" #DEBUG
+#	  printf "daycount = $dayCount \n" #DEBUG
           if [ $startDateNum -gt $todayDateNum ]
           then
           #    printf "%s is more than %s!\n" "$startDateNum" "$todayDateNum" #DEBUG
@@ -217,7 +219,7 @@ while getopts 'nt' OPTION; do
 	# Memory
         printf "%s Memory %s \n" "---" "---"
         printf "Total : %s Mb\n" "$(kb_mb_convert $totalMemory)"
-	printf "Free Memory : %s\n" "$(kb_mb_convert $(calculateAverageUsedMemory))"
+	printf "Free Memory : %s Mb\n" "$(kb_mb_convert $(calculateAverageUsedMemory))"
 
         # printf "Used  : %s Mb\n" "$(kb_mb_convert $usedMemory)"
         # printf "Used %%: %s%% \n" "$(color_percent $usedMemoryPercent)"
