@@ -23,7 +23,6 @@ giveUsageThenQuit() {
 }
 
 color_percent() {
-
   inputnumber=$1
   # Color the input number green if less than 50
   if [ $(awk "BEGIN{print($inputnumber>50);exit}") -eq 0 ]
@@ -57,7 +56,6 @@ then
 fi
 
 # Check disk usage
-
 check_disk_usage() {
   diskmounts=$(lsblk -nl | awk {'print $7'} | grep -vE 'SWAP|/boot/'| awk NF | sort -n)
   longestName=0
@@ -100,11 +98,6 @@ cpuCoreCount=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}')
 while getopts 'nt' OPTION; do
   case "$OPTION" in
     n)
-#      printf "N option , ARG: %s \n" "$OPTARG" # DEBUG
-
-      ## Live
-      ### Memory
-      
       # Memory stats in kB, using awk because bash doesn't have a tool for floating point calculations.
       freeMemory=$(grep "MemFree" /proc/meminfo | awk {'print $2'})
       availableMemory=$(grep "MemAvailable" /proc/meminfo | awk {'print $2'})
@@ -116,7 +109,7 @@ while getopts 'nt' OPTION; do
       loadOne=$(cat /proc/loadavg | awk {'print $1'})
       loadFive=$(cat /proc/loadavg | awk {'print $2'})
       loadFifteen=$(cat /proc/loadavg | awk {'print $3'})
-      # Easy Switch between 1,5,15 mins loadavg
+      # Easy Switch between 1,5,15 mins loadavg (ONLY FOR -n SWITCH)
       cpuLoad=$loadOne
       ## Load to percent
       # Do the math: count/total
@@ -134,7 +127,6 @@ while getopts 'nt' OPTION; do
     t)
       shift "$(($OPTIND -1))"
       TIMESPAN=$*
-#      printf "T option , ARG: %s, extras: $TIMESPAN \n" "$OPTARG" # DEBUG
 
       if [ -z "$TIMESPAN" ]
       then
@@ -148,6 +140,7 @@ while getopts 'nt' OPTION; do
 	printf "ERROR: sar is not installed.\n"
 	giveUsageThenQuit
       fi
+
       # Find Sar Logs
       sar_log_locations="
                          /var/log/sysstat
@@ -157,11 +150,9 @@ while getopts 'nt' OPTION; do
 
       for dir in $sar_log_locations; do
           if [ -d $dir ]; then
-#              echo "Dir $dir exists" # DEBUG
 	      sar_log_path=$dir
           fi
       done
-#      echo "sar logs in $sar_log_path" # DEBUG
 
       while getopts 'd w m l:' TIMESPAN; do
         case "$TIMESPAN" in
@@ -256,7 +247,3 @@ while getopts 'nt' OPTION; do
 done
 shift "$(($OPTIND -1))"
 extraArgs=$*
-
-
-# DEBUG
-# echo "extras $extraArgs"
