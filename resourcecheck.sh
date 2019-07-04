@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-# TODO LIST
-### Make output Prettier
 # Colors
 LIGHTRED='\033[1;31m'
 GREEN='\033[0;32m'    
@@ -62,11 +60,23 @@ fi
 
 check_disk_usage() {
   diskmounts=$(lsblk -nl | awk {'print $7'} | grep -vE 'SWAP|/boot/'| awk NF | sort -n)
+  longestName=0
+
+  # Work out the longest disk name, and buffer the output columns accordingly
+  for disk in $diskmounts;do
+      nameCharCount=${#disk}
+      if [ ${#disk} -gt $longestName ]
+      then
+          longestName=${#disk}
+      fi
+  done
+  bufferCharCount=$((longestName+1))
+
+  # Output the disk info
   printf "%s Disks (%% Full) %s\n" "---" "---"
   for disk in $diskmounts;do
       percentfull=$(df -h $disk | grep -v "Filesystem"| awk {'print $5'} | tr -d "%")
-      # can we maybe work out the longest mount name and change the buffer accordingly? #################################################
-      printf "%-20s| %-5s%% \n" "$disk" "$(color_percent $percentfull)"
+      printf "%*s| %s%% \n" -$bufferCharCount "$disk" "$(color_percent $percentfull)"
   done
 }
 
