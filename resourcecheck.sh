@@ -134,7 +134,10 @@ while getopts 'nt' OPTION; do
       fi     
 
       # Check SAR installed   # DEBUG
-
+      if ! [ -x "$(command -v sar)" ]; then
+	printf "ERROR: sar is not installed.\n"
+	giveUsageThenQuit
+      fi
       # Find Sar Logs
       sar_log_locations="
                          /var/log/sysstat
