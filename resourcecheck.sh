@@ -70,8 +70,21 @@ check_disk_usage() {
   done
 }
 
+# Info Dump
+info_dump() {
+    printf "%s Memory %s \n" "---" "---"
+    printf "Total : %s Mb\n" "$(kb_mb_convert $totalMemory)"
+    printf "Used  : %s Mb\n" "$(kb_mb_convert $usedMemory)"
+    printf "Used %%: %s%% \n" "$(color_percent $usedMemoryPercent)"
+    printf "%s CPU %s\n" "---" "---"
+    printf "Cores : %s\n" "$cpuCoreCount"
+    printf "Load  : %s\n" "$cpuLoad"
+    printf "Load%% : %s%%\n" "$(color_percent $cpuLoadPercent)"
+}
+
 # Common Variables
 totalMemory=$(grep "MemTotal" /proc/meminfo | awk {'print $2'})
+cpuCoreCount=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}')
 
 # Check resources
 while getopts 'nt' OPTION; do
@@ -91,29 +104,29 @@ while getopts 'nt' OPTION; do
       freeMemoryPercent=$(awk "BEGIN{printf ($usedMemoryPercent - $totalMemory);exit}")
       
       ### CPU
-      cpuCoreCount=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}')
+#      cpuCoreCount=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}') #Moved to common
       loadOne=$(cat /proc/loadavg | awk {'print $1'})
       loadFive=$(cat /proc/loadavg | awk {'print $2'})
       loadFifteen=$(cat /proc/loadavg | awk {'print $3'})
       # Easy Switch between 1,5,15 mins loadavg
-      cpuLoad=$loadFive
+      cpuLoad=$loadOne
       ## Load to percent
       # Do the math: count/total
-      cpuLoadPercent1=$(awk "BEGIN{printf ($loadOne / $cpuCoreCount);exit}")
+      cpuLoadPercent1=$(awk "BEGIN{printf ($cpuLoad / $cpuCoreCount);exit}")
       # Convert to decimal
       cpuLoadPercent=$(awk "BEGIN{printf ($cpuLoadPercent1*100);exit}")
       
       # Print Section
-      
-      printf "%s Memory %s \n" "---" "---"
-      printf "Total : %s Mb\n" "$(kb_mb_convert $totalMemory)"
-      printf "Used  : %s Mb\n" "$(kb_mb_convert $usedMemory)"
-      printf "Used %%: %s%% \n" "$(color_percent $usedMemoryPercent)"
-      
-      printf "%s CPU %s\n" "---" "---"
-      printf "Cores : %s\n" "$cpuCoreCount"
-      printf "Load  : %s\n" "$cpuLoad"
-      printf "Load%% : %s%%\n" "$(color_percent $cpuLoadPercent)"
+      info_dump
+#      printf "%s Memory %s \n" "---" "---"
+#      printf "Total : %s Mb\n" "$(kb_mb_convert $totalMemory)"
+#      printf "Used  : %s Mb\n" "$(kb_mb_convert $usedMemory)"
+#      printf "Used %%: %s%% \n" "$(color_percent $usedMemoryPercent)"
+#      
+#      printf "%s CPU %s\n" "---" "---"
+#      printf "Cores : %s\n" "$cpuCoreCount"
+#      printf "Load  : %s\n" "$cpuLoad"
+#      printf "Load%% : %s%%\n" "$(color_percent $cpuLoadPercent)"
       
       ### DISK Space
       check_disk_usage
@@ -191,6 +204,25 @@ while getopts 'nt' OPTION; do
 
 	# Calculate Average Resource consumption from specified timespan
 	# CPU Load
+	calculateAverageCPULoad() {
+          if [ $startDateNum -gt $todayDateNum ]
+          then
+              for i in $(eval echo "{$startDateNum..31} {1..$todayDateNum}");do
+                      sar -q -f /var/log/sysstat/sa$i 2>/dev/null | grep Average
+              done
+          
+          else [ $startDateNum -lt $todayDateNum ]
+              for i in $(eval echo "{$startDateNum..$todayDateNum}");do
+                      sar -q -f /var/log/sysstat/sa$i 2>/dev/null | grep Average
+              done
+          fi | awk '{ total += $4; count++ } END { print total/count }'
+	}
+	cpuLoad=$(calculateAverageCPULoad)
+        ## Load to percent
+	# Do the math: count/total
+	cpuLoadPercent1=$(awk "BEGIN{printf ($cpuLoad / $cpuCoreCount);exit}")
+	# Convert to decimal
+	cpuLoadPercent=$(awk "BEGIN{printf ($cpuLoadPercent1*100);exit}")
 
 	# Memory
 	calculateAverageUsedMemory() {
@@ -204,7 +236,7 @@ while getopts 'nt' OPTION; do
                       sar -r -f /var/log/sysstat/sa$i 2>/dev/null | grep Average
               done
           
-          else [ $startDateNum -gt $todayDateNum ]
+          else [ $startDateNum -lt $todayDateNum ]
           #    printf "Less than\n" #DEBUG
               for i in $(eval echo "{$startDateNum..$todayDateNum}");do
                       #echo "Day"$i
@@ -212,14 +244,20 @@ while getopts 'nt' OPTION; do
               done
           fi | awk '{sum = $2+$5+$6} ; { total += sum; count++ } END { print total/count }'
 	}
-	
-	# Dump the info
-	# CPU
 
-	# Memory
-        printf "%s Memory %s \n" "---" "---"
-        printf "Total : %s Mb\n" "$(kb_mb_convert $totalMemory)"
-	printf "Free Memory : %s Mb\n" "$(kb_mb_convert $(calculateAverageUsedMemory))"
+#	# Dump the info
+        usedMemory=$(calculateAverageUsedMemory)
+	usedMemoryPercent=$(awk "BEGIN{printf ($usedMemory / $totalMemory)*100 ;exit}"| awk '{printf "%.2f\n", $1}')
+	info_dump
+#	# CPU
+#        printf "%s CPU %s\n" "---" "---"
+#	printf "Cores : %s\n" "$cpuCoreCount"
+#	printf "Avg Load: %s \n" "$cpuLoad"
+#        printf "Load%% : %s%%\n" "$(color_percent $cpuLoadPercent)"
+#	# Memory
+#        printf "%s Memory %s \n" "---" "---"
+#        printf "Total : %s Mb\n" "$(kb_mb_convert $totalMemory)"
+#	printf "Free Memory : %s Mb\n" "$(kb_mb_convert $(calculateAverageUsedMemory))"
 
         # printf "Used  : %s Mb\n" "$(kb_mb_convert $usedMemory)"
         # printf "Used %%: %s%% \n" "$(color_percent $usedMemoryPercent)"
