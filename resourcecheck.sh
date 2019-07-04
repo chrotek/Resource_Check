@@ -90,13 +90,12 @@ cpuCoreCount=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}')
 while getopts 'nt' OPTION; do
   case "$OPTION" in
     n)
-      printf "N option , ARG: %s \n" "$OPTARG" # DEBUG
+#      printf "N option , ARG: %s \n" "$OPTARG" # DEBUG
 
       ## Live
       ### Memory
       
       # Memory stats in kB, using awk because bash doesn't have a tool for floating point calculations.
-      # totalMemory=$(grep "MemTotal" /proc/meminfo | awk {'print $2'}) # Moved to common variables
       freeMemory=$(grep "MemFree" /proc/meminfo | awk {'print $2'})
       availableMemory=$(grep "MemAvailable" /proc/meminfo | awk {'print $2'})
       usedMemory=$(awk "BEGIN{printf ($totalMemory - $availableMemory);exit}")
@@ -104,7 +103,6 @@ while getopts 'nt' OPTION; do
       freeMemoryPercent=$(awk "BEGIN{printf ($usedMemoryPercent - $totalMemory);exit}")
       
       ### CPU
-#      cpuCoreCount=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}') #Moved to common
       loadOne=$(cat /proc/loadavg | awk {'print $1'})
       loadFive=$(cat /proc/loadavg | awk {'print $2'})
       loadFifteen=$(cat /proc/loadavg | awk {'print $3'})
@@ -118,15 +116,6 @@ while getopts 'nt' OPTION; do
       
       # Print Section
       info_dump
-#      printf "%s Memory %s \n" "---" "---"
-#      printf "Total : %s Mb\n" "$(kb_mb_convert $totalMemory)"
-#      printf "Used  : %s Mb\n" "$(kb_mb_convert $usedMemory)"
-#      printf "Used %%: %s%% \n" "$(color_percent $usedMemoryPercent)"
-#      
-#      printf "%s CPU %s\n" "---" "---"
-#      printf "Cores : %s\n" "$cpuCoreCount"
-#      printf "Load  : %s\n" "$cpuLoad"
-#      printf "Load%% : %s%%\n" "$(color_percent $cpuLoadPercent)"
       
       ### DISK Space
       check_disk_usage
@@ -135,7 +124,7 @@ while getopts 'nt' OPTION; do
     t)
       shift "$(($OPTIND -1))"
       TIMESPAN=$*
-      printf "T option , ARG: %s, extras: $TIMESPAN \n" "$OPTARG" # DEBUG
+#      printf "T option , ARG: %s, extras: $TIMESPAN \n" "$OPTARG" # DEBUG
 
       if [ -z "$TIMESPAN" ]
       then
@@ -155,11 +144,11 @@ while getopts 'nt' OPTION; do
 
       for dir in $sar_log_locations; do
           if [ -d $dir ]; then
-              echo "Dir $dir exists" # DEBUG
+#              echo "Dir $dir exists" # DEBUG
 	      sar_log_path=$dir
           fi
       done
-      echo "sar logs in $sar_log_path" # DEBUG
+#      echo "sar logs in $sar_log_path" # DEBUG
 
       while getopts 'd w m l:' TIMESPAN; do
         case "$TIMESPAN" in
@@ -226,47 +215,26 @@ while getopts 'nt' OPTION; do
 
 	# Memory
 	calculateAverageUsedMemory() {
-#	  printf "calculateAverageUsedMemory for %s - %s \n" "$startDate" "$todayDate" #DEBUG
-#	  printf "daycount = $dayCount \n" #DEBUG
           if [ $startDateNum -gt $todayDateNum ]
           then
-          #    printf "%s is more than %s!\n" "$startDateNum" "$todayDateNum" #DEBUG
               for i in $(eval echo "{$startDateNum..31} {1..$todayDateNum}");do
-                      #echo "Day"$i
                       sar -r -f /var/log/sysstat/sa$i 2>/dev/null | grep Average
               done
           
           else [ $startDateNum -lt $todayDateNum ]
-          #    printf "Less than\n" #DEBUG
               for i in $(eval echo "{$startDateNum..$todayDateNum}");do
-                      #echo "Day"$i
                       sar -r -f /var/log/sysstat/sa$i 2>/dev/null | grep Average
               done
           fi | awk '{sum = $2+$5+$6} ; { total += sum; count++ } END { print total/count }'
 	}
-
-#	# Dump the info
         usedMemory=$(calculateAverageUsedMemory)
 	usedMemoryPercent=$(awk "BEGIN{printf ($usedMemory / $totalMemory)*100 ;exit}"| awk '{printf "%.2f\n", $1}')
-	info_dump
-#	# CPU
-#        printf "%s CPU %s\n" "---" "---"
-#	printf "Cores : %s\n" "$cpuCoreCount"
-#	printf "Avg Load: %s \n" "$cpuLoad"
-#        printf "Load%% : %s%%\n" "$(color_percent $cpuLoadPercent)"
-#	# Memory
-#        printf "%s Memory %s \n" "---" "---"
-#        printf "Total : %s Mb\n" "$(kb_mb_convert $totalMemory)"
-#	printf "Free Memory : %s Mb\n" "$(kb_mb_convert $(calculateAverageUsedMemory))"
 
-        # printf "Used  : %s Mb\n" "$(kb_mb_convert $usedMemory)"
-        # printf "Used %%: %s%% \n" "$(color_percent $usedMemoryPercent)"
+	# Dump the info
+	info_dump
 
 	# DISK Space
         check_disk_usage
-
-
-
       done;;     
     ?)
       giveUsageThenQuit
