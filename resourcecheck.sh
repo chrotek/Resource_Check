@@ -1,13 +1,5 @@
 #!/usr/bin/env bash
 
-# TO DO
-## Append the date of the file to each line:
-### sar -q -f /var/log/sysstat/sa$i 2>/dev/null | while read line ; do printf "%s-$line \n" "$(sar -q -f /var/log/sysstat/sa$i 2>/dev/null | head -n1 | awk {'print $4'})";done | grep Average
-### 
-### MERGED calcer into this script. Currently trying to work out why the functionality got broken
-
-
-
 # Colors
 LIGHTRED='\033[1;31m'
 GREEN='\033[0;32m'    
@@ -56,13 +48,6 @@ kb_mb_convert() {
   printf $output
 }
 
-# Check some args were supplied
-if [ $# -eq 0 ]
-then
-    printf "No Argument given!\n"
-    giveUsageThenQuit
-fi
-
 # Check disk usage
 check_disk_usage() {
   diskmounts=$(lsblk -nl | awk {'print $7'} | grep -vE 'SWAP|/boot/'| awk NF | sort -n)
@@ -85,25 +70,6 @@ check_disk_usage() {
       printf "%*s| %s%% \n" -$bufferCharCount "$disk" "$(color_percent $percentfull)"
   done
 }
-
-# Info Dump
-info_dump() {
-    printf "%s Memory %s \n" "---" "---"
-    printf "Total : %s Mb\n" "$(kb_mb_convert $totalMemory)"
-    printf "Used  : %s Mb\n" "$(kb_mb_convert $usedMemory)"
-    printf "Used %%: %s%% \n" "$(color_percent $usedMemoryPercent)"
-    printf "%s CPU %s\n" "---" "---"
-    printf "Cores : %s\n" "$cpuCoreCount"
-    printf "Load  : %s\n" "$cpuLoad"
-    printf "Load%% : %s%%\n" "$(color_percent $cpuLoadPercent)"
-    printf "Highest load observed: %s \n" "$highestLoad"
-    printf "Times CPU was overloaded : %s \n" "$loadBreachCount"
-}
-
-# Common Variables
-totalMemory=$(grep "MemTotal" /proc/meminfo | awk {'print $2'})
-cpuCoreCount=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}')
-
 
 # Functions to parse sar logs
 getSarCPULogs () {
@@ -165,8 +131,30 @@ calculateHighestCPULoadAndBreaches() {
 #highestLoad=$(cat /tmp/highestLoad)
 #loadBreachCount=$(cat /tmp/loadBreachCount)
 
+# Info Dump
+info_dump() {
+    printf "%s Memory %s \n" "---" "---"
+    printf "Total : %s Mb\n" "$(kb_mb_convert $totalMemory)"
+    printf "Used  : %s Mb\n" "$(kb_mb_convert $usedMemory)"
+    printf "Used %%: %s%% \n" "$(color_percent $usedMemoryPercent)"
+    printf "%s CPU %s\n" "---" "---"
+    printf "Cores : %s\n" "$cpuCoreCount"
+    printf "Load  : %s\n" "$cpuLoad"
+    printf "Load%% : %s%%\n" "$(color_percent $cpuLoadPercent)"
+    printf "Highest load observed: %s \n" "$highestLoad"
+    printf "Times CPU was overloaded : %s \n" "$loadBreachCount"
+}
 
+# Common Variables
+totalMemory=$(grep "MemTotal" /proc/meminfo | awk {'print $2'})
+cpuCoreCount=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}')
 
+# Check some args were supplied
+if [ $# -eq 0 ]
+then
+    printf "No Argument given!\n"
+    giveUsageThenQuit
+fi
 
 
 # Check resources
