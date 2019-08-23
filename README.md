@@ -2,12 +2,16 @@
 
 Script to analyze resource consumption for a Linux device. 
 
-Usage:
+#### Usage:
+
 ./resourcecheck.sh \<options>
 
-Possible Options :
+#### Possible Options :
+
 -n now - print current resources
+
 -t timespan - print average consumption for an amount of time
+
   Required options for timespan:
   -d - day
   -w - week
