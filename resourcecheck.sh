@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+# TO DO
+## Append the date of the file to each line:
+### sar -q -f /var/log/sysstat/sa$i 2>/dev/null | while read line ; do printf "%s-$line \n" "$(sar -q -f /var/log/sysstat/sa$i 2>/dev/null | head -n1 | awk {'print $4'})";done | grep Average
+### 
+### MERGED calcer into this script. Currently trying to work out why the functionality got broken
+
+
+
 # Colors
 LIGHTRED='\033[1;31m'
 GREEN='\033[0;32m'    
@@ -88,11 +96,78 @@ info_dump() {
     printf "Cores : %s\n" "$cpuCoreCount"
     printf "Load  : %s\n" "$cpuLoad"
     printf "Load%% : %s%%\n" "$(color_percent $cpuLoadPercent)"
+    printf "Highest load observed: %s \n" "$highestLoad"
+    printf "Times CPU was overloaded : %s \n" "$loadBreachCount"
 }
 
 # Common Variables
 totalMemory=$(grep "MemTotal" /proc/meminfo | awk {'print $2'})
 cpuCoreCount=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}')
+
+
+# Functions to parse sar logs
+getSarCPULogs () {
+
+  if [ $startDateNum -gt $todayDateNum ]
+  then
+      for i in $(eval echo "{$startDateNum..31} {1..$todayDateNum}");do
+              printf "$(sar -q -f /var/log/sysstat/sa$i 2>/dev/null | head -n1 | awk {'print $4'})" > /tmp/date
+              sar -q -f /var/log/sysstat/sa$i 2>/dev/null | while read line ; do
+                  printf "%s-$line \n" "$(cat /tmp/date)"
+              done;
+      done
+
+  else [ $startDateNum -lt $todayDateNum ]
+      for i in $(eval echo "{$startDateNum..$todayDateNum}");do
+              printf "$(sar -q -f /var/log/sysstat/sa$i 2>/dev/null | head -n1 | awk {'print $4'})" > /tmp/date
+              sar -q -f /var/log/sysstat/sa$i 2>/dev/null | while read line ; do
+                  printf "%s-$line \n" "$(cat /tmp/date)"
+              done;
+      done
+  fi
+}
+
+calculateAverageCPULoad() {
+  getSarCPULogs | grep Average | awk '{ total += $4; count++ } END { print total/count }'
+}
+
+touch /tmp/highestLoad /tmp/loadBreachCount
+highestLoad=0
+loadBreachCount=0
+
+calculateHighestCPULoadAndBreaches() {
+  getSarCPULogs | while read line ; do
+    read -ra lineArray <<< "$line"
+
+    lineCPULoad=${lineArray[3]}
+    # Check if highest
+    numx='^[0-9]+\.[0-9]+$'
+    if [[ ! -z "$lineCPULoad" ]] && [[ "$lineCPULoad" =~ $numx ]] && [[ $(awk "BEGIN{print($lineCPULoad<$highestLoad);exit}") -eq "0" ]]
+    then
+        highestLoad=$lineCPULoad
+        echo "$highestLoad" > /tmp/highestLoad
+#	printf "DEBUG Highest Load      %s\n" "$highestLoad"
+    fi
+    # Check if higher than cpuCoreCount , Increment the loadBreachCount if so
+    if [[ ! -z "$lineCPULoad" ]] && [[ "$lineCPULoad" =~ $numx ]] && [[ $(awk "BEGIN{print($lineCPULoad<$cpuCoreCount);exit}") -eq "0" ]]
+    then
+        ((loadBreachCount++))
+        echo $loadBreachCount > /tmp/loadBreachCount
+#	  printf "DEBUG Load Breach Count %s\n" "$loadBreachCount"
+    fi
+  done
+  highestLoad=$(cat /tmp/highestLoad)
+  loadBreachCount=$(cat /tmp/loadBreachCount)
+#  printf "DEBUG Load Breach Count %s\n" "$loadBreachCount"
+#  printf "DEBUG Highest Load      %s\n" "$highestLoad"
+}
+#calculateHighestCPULoadAndBreaches
+#highestLoad=$(cat /tmp/highestLoad)
+#loadBreachCount=$(cat /tmp/loadBreachCount)
+
+
+
+
 
 # Check resources
 while getopts 'nt' OPTION; do
@@ -168,7 +243,7 @@ while getopts 'nt' OPTION; do
       
           m)
             printf "month\n"
-            dayCount=31
+            dayCount=28
             ;;
 	  l)
 	    dayCount=$OPTARG
@@ -197,25 +272,14 @@ while getopts 'nt' OPTION; do
 
 	# Calculate Average Resource consumption from specified timespan
 	# CPU Load
-	calculateAverageCPULoad() {
-          if [ $startDateNum -gt $todayDateNum ]
-          then
-              for i in $(eval echo "{$startDateNum..31} {1..$todayDateNum}");do
-                      sar -q -f /var/log/sysstat/sa$i 2>/dev/null | grep Average
-              done
-          
-          else [ $startDateNum -lt $todayDateNum ]
-              for i in $(eval echo "{$startDateNum..$todayDateNum}");do
-                      sar -q -f /var/log/sysstat/sa$i 2>/dev/null | grep Average
-              done
-          fi | awk '{ total += $4; count++ } END { print total/count }'
-	}
 	cpuLoad=$(calculateAverageCPULoad)
         ## Load to percent
 	# Do the math: count/total
 	cpuLoadPercent1=$(awk "BEGIN{printf ($cpuLoad / $cpuCoreCount);exit}")
 	# Convert to decimal
 	cpuLoadPercent=$(awk "BEGIN{printf ($cpuLoadPercent1*100);exit}")
+
+
 
 	# Memory
 	calculateAverageUsedMemory() {
@@ -234,6 +298,7 @@ while getopts 'nt' OPTION; do
         usedMemory=$(calculateAverageUsedMemory)
 	usedMemoryPercent=$(awk "BEGIN{printf ($usedMemory / $totalMemory)*100 ;exit}"| awk '{printf "%.2f\n", $1}')
 
+	calculateHighestCPULoadAndBreaches
 	# Dump the info
 	info_dump
 
@@ -247,3 +312,6 @@ while getopts 'nt' OPTION; do
 done
 shift "$(($OPTIND -1))"
 extraArgs=$*
+
+# Cleanup
+rm /tmp/highestLoad /tmp/date /tmp/loadBreachCount
