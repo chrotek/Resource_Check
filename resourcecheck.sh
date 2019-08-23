@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author : chrotek
 
 # Colors
 LIGHTRED='\033[1;31m'
