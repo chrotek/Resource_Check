@@ -98,7 +98,7 @@ calculateAverageCPULoad() {
 }
 
 calculateHighestCPULoadAndBreaches() {
-  echo "Calculating highest Load & Breaches"
+
   touch /tmp/highestLoad /tmp/loadBreachCount
   highestLoad=0
   loadBreachCount=0
