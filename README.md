@@ -21,3 +21,7 @@ Script to analyze resource consumption for a Linux device.
     -m - month
     
     -l x - last x days
+
+  For Example:
+  
+        resourcecheck.sh -tw # Show averages over the past week
