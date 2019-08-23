@@ -4,7 +4,7 @@ Script to analyze resource consumption for a Linux device.
 
 #### Usage:
 
-./resourcecheck.sh \<options>
+    ./resourcecheck.sh \<options>
 
 Or if you don't need to download:
 
