@@ -97,11 +97,10 @@ calculateAverageCPULoad() {
   getSarCPULogs | grep Average | awk '{ total += $4; count++ } END { print total/count }'
 }
 
-touch /tmp/highestLoad /tmp/loadBreachCount
-highestLoad=0
-loadBreachCount=0
-
 calculateHighestCPULoadAndBreaches() {
+  touch /tmp/highestLoad /tmp/loadBreachCount
+  highestLoad=0
+  loadBreachCount=0
   getSarCPULogs | while read line ; do
     read -ra lineArray <<< "$line"
 
@@ -112,24 +111,17 @@ calculateHighestCPULoadAndBreaches() {
     then
         highestLoad=$lineCPULoad
         echo "$highestLoad" > /tmp/highestLoad
-#	printf "DEBUG Highest Load      %s\n" "$highestLoad"
     fi
     # Check if higher than cpuCoreCount , Increment the loadBreachCount if so
     if [[ ! -z "$lineCPULoad" ]] && [[ "$lineCPULoad" =~ $numx ]] && [[ $(awk "BEGIN{print($lineCPULoad<$cpuCoreCount);exit}") -eq "0" ]]
     then
         ((loadBreachCount++))
         echo $loadBreachCount > /tmp/loadBreachCount
-#	  printf "DEBUG Load Breach Count %s\n" "$loadBreachCount"
     fi
   done
   highestLoad=$(cat /tmp/highestLoad)
   loadBreachCount=$(cat /tmp/loadBreachCount)
-#  printf "DEBUG Load Breach Count %s\n" "$loadBreachCount"
-#  printf "DEBUG Highest Load      %s\n" "$highestLoad"
 }
-#calculateHighestCPULoadAndBreaches
-#highestLoad=$(cat /tmp/highestLoad)
-#loadBreachCount=$(cat /tmp/loadBreachCount)
 
 # Info Dump
 info_dump() {
@@ -220,22 +212,18 @@ while getopts 'nt' OPTION; do
       while getopts 'd w m l:' TIMESPAN; do
         case "$TIMESPAN" in
           d)
-            printf "day\n"
 	    dayCount=1
             ;;
       
           w)
-            printf "week\n"
             dayCount=7
             ;;
       
           m)
-            printf "month\n"
             dayCount=28
             ;;
 	  l)
 	    dayCount=$OPTARG
-            printf "last x days %s\n" "$dayCount"
 	    ;;
           ?)
             giveUsageThenQuit
@@ -302,4 +290,4 @@ shift "$(($OPTIND -1))"
 extraArgs=$*
 
 # Cleanup
-rm /tmp/highestLoad /tmp/date /tmp/loadBreachCount
+rm -f /tmp/highestLoad /tmp/date /tmp/loadBreachCount
