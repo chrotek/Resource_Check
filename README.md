@@ -24,4 +24,4 @@ Script to analyze resource consumption for a Linux device.
 
   For Example:
   
-        resourcecheck.sh -tw # Show averages over the past week
+        ./resourcecheck.sh -tw # Show averages over the past week
