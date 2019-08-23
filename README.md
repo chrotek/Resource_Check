@@ -3,7 +3,7 @@
 Script to analyze resource consumption for a Linux device. 
 
 Usage:
-./resourcecheck.sh <options>
+./resourcecheck.sh \<options>
 
 Possible Options :
 -n now - print current resources
