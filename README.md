@@ -8,16 +8,16 @@ Script to analyze resource consumption for a Linux device.
 
 #### Possible Options :
 
--n now - print current resources
+    -n now - print current resources
 
--t timespan - print average consumption for an amount of time
+    -t timespan - print average consumption for an amount of time
 
   Required options for timespan:
   
-  -d - day
-  
-  -w - week
-  
-  -m - month
-  
-  -l x - last x days
+    -d - day
+    
+    -w - week
+    
+    -m - month
+    
+    -l x - last x days
