@@ -82,7 +82,6 @@ getSarCPULogs () {
                   printf "%s-$line \n" "$(cat /tmp/date)"
               done;
       done
-
   else [ $startDateNum -lt $todayDateNum ]
       for i in $(eval echo "{$startDateNum..$todayDateNum}");do
               printf "$(sar -q -f /var/log/sysstat/sa$i 2>/dev/null | head -n1 | awk {'print $4'})" > /tmp/date
@@ -98,6 +97,7 @@ calculateAverageCPULoad() {
 }
 
 calculateHighestCPULoadAndBreaches() {
+  echo "Calculating highest Load & Breaches"
   touch /tmp/highestLoad /tmp/loadBreachCount
   highestLoad=0
   loadBreachCount=0
@@ -121,6 +121,12 @@ calculateHighestCPULoadAndBreaches() {
   done
   highestLoad=$(cat /tmp/highestLoad)
   loadBreachCount=$(cat /tmp/loadBreachCount)
+  ## Load to percent
+  # Do the math: count/total
+  highestLoadPercent1=$(awk "BEGIN{printf ($highestLoad / $cpuCoreCount);exit}")
+  # Convert to percent
+  highestLoadPercent=$(awk "BEGIN{printf ($highestLoadPercent1*100);exit}")
+
 }
 
 # Info Dump
@@ -133,8 +139,6 @@ info_dump() {
     printf "Cores : %s\n" "$cpuCoreCount"
     printf "Load  : %s\n" "$cpuLoad"
     printf "Load%% : %s%%\n" "$(color_percent $cpuLoadPercent)"
-    printf "Highest load observed: %s \n" "$highestLoad"
-    printf "Times CPU was overloaded : %s \n" "$loadBreachCount"
 }
 
 # Common Variables
@@ -171,7 +175,6 @@ while getopts 'nt' OPTION; do
       cpuLoadPercent1=$(awk "BEGIN{printf ($cpuLoad / $cpuCoreCount);exit}")
       # Convert to decimal
       cpuLoadPercent=$(awk "BEGIN{printf ($cpuLoadPercent1*100);exit}")
-      
       # Print Section
       info_dump
       
@@ -200,7 +203,6 @@ while getopts 'nt' OPTION; do
       sar_log_locations="
                          /var/log/sysstat
                          /var/log/sa
-                         /fake/path
                         "
 
       for dir in $sar_log_locations; do
@@ -256,7 +258,6 @@ while getopts 'nt' OPTION; do
 	cpuLoadPercent=$(awk "BEGIN{printf ($cpuLoadPercent1*100);exit}")
 
 
-
 	# Memory
 	calculateAverageUsedMemory() {
           if [ $startDateNum -gt $todayDateNum ]
@@ -273,10 +274,15 @@ while getopts 'nt' OPTION; do
 	}
         usedMemory=$(calculateAverageUsedMemory)
 	usedMemoryPercent=$(awk "BEGIN{printf ($usedMemory / $totalMemory)*100 ;exit}"| awk '{printf "%.2f\n", $1}')
-
+	
+	# Calculate highest CPU Load and How many times the system was overloaded
 	calculateHighestCPULoadAndBreaches
+
 	# Dump the info
 	info_dump
+        printf "Highest load observed    : %s \n" "$highestLoad"
+        printf "Highest load %% observed  : %s%% \n" "$(color_percent $highestLoadPercent)"
+        printf "Times CPU was overloaded : %s \n" "$loadBreachCount"
 
 	# DISK Space
         check_disk_usage
