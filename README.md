@@ -6,6 +6,10 @@ Script to analyze resource consumption for a Linux device.
 
 ./resourcecheck.sh \<options>
 
+Or if you don't need to download:
+curl -s https://raw.githubusercontent.com/chrotek/Resource_Check/master/resourcecheck.sh | bash -s -- -\<options>
+
+
 #### Possible Options :
 
     -n now - print current resources
