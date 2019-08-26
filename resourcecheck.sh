@@ -133,13 +133,13 @@ calculateHighestCPULoadAndBreaches() {
 # Info Dump
 info_dump() {
     printf "%s Memory %s \n" "---" "---"
-    printf "Total : %s Mb\n" "$(kb_mb_convert $totalMemory)"
-    printf "Used  : %s Mb\n" "$(kb_mb_convert $usedMemory)"
+    printf "Total | %s Mb\n" "$(kb_mb_convert $totalMemory)"
+    printf "Used  | %s Mb\n" "$(kb_mb_convert $usedMemory)"
     printf "Used %%: %s%% \n" "$(color_percent $usedMemoryPercent)"
     printf "%s CPU %s\n" "---" "---"
-    printf "Cores : %s\n" "$cpuCoreCount"
-    printf "Load  : %s\n" "$cpuLoad"
-    printf "Load%% : %s%%\n" "$(color_percent $cpuLoadPercent)"
+    printf "Cores | %s\n" "$cpuCoreCount"
+    printf "Load  | %s\n" "$cpuLoad"
+    printf "Load%% | %s%%\n" "$(color_percent $cpuLoadPercent)"
 }
 
 # Common Variables
@@ -281,9 +281,9 @@ while getopts 'nt' OPTION; do
 
 	# Dump the info
 	info_dump
-        printf "Highest load observed    : %s \n" "$highestLoad"
-        printf "Highest load %% observed  : %s%% \n" "$(color_percent $highestLoadPercent)"
-        printf "Times CPU was overloaded : %s \n" "$loadBreachCount"
+        printf "Highest load observed    | %s \n" "$highestLoad"
+        printf "Highest load %% observed  | %s%% \n" "$(color_percent $highestLoadPercent)"
+        printf "Times CPU was overloaded | %s \n" "$loadBreachCount"
 
 	# DISK Space
         check_disk_usage
