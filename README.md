@@ -4,11 +4,11 @@ Script to analyze resource consumption for a Linux device.
 
 #### Usage:
 
-    ./resourcecheck.sh \<options>
+    ./resourcecheck.sh <options>
 
 Or if you don't need to download:
 
-    curl -s https://raw.githubusercontent.com/chrotek/Resource_Check/master/resourcecheck.sh | bash -s -- -\<options>
+    curl -s https://raw.githubusercontent.com/chrotek/Resource_Check/master/resourcecheck.sh | bash -s -- -<options>
 
 
 #### Possible Options :
