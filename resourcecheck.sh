@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Author : chrotek
+# TODO   : fix the sar logs variables that i accidentaly hardcoded
 
 # Colors
 LIGHTRED='\033[1;31m'
