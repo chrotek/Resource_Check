@@ -151,16 +151,14 @@ info_dump() {
 totalMemory=$(grep "MemTotal" /proc/meminfo | awk {'print $2'})
 cpuCoreCount=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}')
 
-# Check some args were supplied
+# Check some args were supplied, if not, re-run with -n for live resources
 if [ $# -eq 0 ]
 then
-    printf "No Argument given!\n"
-    giveUsageThenQuit
+    $0 -n
 fi
 
-
 # Check resources
-while getopts 'nt' OPTION; do
+while getopts 'nth' OPTION; do
   case "$OPTION" in
     n)
       # Memory stats in kB, using awk because bash doesn't have a tool for floating point calculations.
@@ -293,6 +291,10 @@ while getopts 'nt' OPTION; do
 	# DISK Space
         check_disk_usage
       done;;     
+
+    h)
+      giveUsageThenQuit
+      ;;
     ?)
       giveUsageThenQuit
       ;;
