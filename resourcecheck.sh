@@ -79,15 +79,15 @@ getSarCPULogs () {
   if [ $startDateNum -gt $todayDateNum ]
   then
       for i in $(eval echo "{$startDateNum..31} {1..$todayDateNum}");do
-              printf "$(sar -q -f /var/log/sysstat/sa$i 2>/dev/null | head -n1 | awk {'print $4'})" > /tmp/date
-              sar -q -f /var/log/sysstat/sa$i 2>/dev/null | while read line ; do
+              printf "$(sar -q -f $sar_log_path/sa$i 2>/dev/null | head -n1 | awk {'print $4'})" > /tmp/date
+              sar -q -f $sar_log_path/sa$i 2>/dev/null | while read line ; do
                   printf "%s-$line \n" "$(cat /tmp/date)"
               done;
       done
   else [ $startDateNum -lt $todayDateNum ]
       for i in $(eval echo "{$startDateNum..$todayDateNum}");do
-              printf "$(sar -q -f /var/log/sysstat/sa$i 2>/dev/null | head -n1 | awk {'print $4'})" > /tmp/date
-              sar -q -f /var/log/sysstat/sa$i 2>/dev/null | while read line ; do
+              printf "$(sar -q -f $sar_log_path/sa$i 2>/dev/null | head -n1 | awk {'print $4'})" > /tmp/date
+              sar -q -f $sar_log_path/sa$i 2>/dev/null | while read line ; do
                   printf "%s-$line \n" "$(cat /tmp/date)"
               done;
       done
@@ -107,12 +107,14 @@ calculateHighestCPULoadAndBreaches() {
     read -ra lineArray <<< "$line"
 
     lineCPULoad=${lineArray[3]}
+    lineDateTime=${lineArray[0]}
     # Check if highest
     numx='^[0-9]+\.[0-9]+$'
     if [[ ! -z "$lineCPULoad" ]] && [[ "$lineCPULoad" =~ $numx ]] && [[ $(awk "BEGIN{print($lineCPULoad<$highestLoad);exit}") -eq "0" ]]
     then
         highestLoad=$lineCPULoad
-        echo "$highestLoad" > /tmp/highestLoad
+	echo $lineDateTime > /tmp/highestLoadDateTime
+        echo $highestLoad > /tmp/highestLoad
     fi
     # Check if higher than cpuCoreCount , Increment the loadBreachCount if so
     if [[ ! -z "$lineCPULoad" ]] && [[ "$lineCPULoad" =~ $numx ]] && [[ $(awk "BEGIN{print($lineCPULoad<$cpuCoreCount);exit}") -eq "0" ]]
@@ -122,7 +124,9 @@ calculateHighestCPULoadAndBreaches() {
     fi
   done
   highestLoad=$(cat /tmp/highestLoad)
+  highestLoadDateTime=$(cat /tmp/highestLoadDateTime | sed 's/-/ at /')
   loadBreachCount=$(cat /tmp/loadBreachCount)
+  
   ## Load to percent
   # Do the math: count/total
   highestLoadPercent1=$(awk "BEGIN{printf ($highestLoad / $cpuCoreCount);exit}")
@@ -235,7 +239,7 @@ while getopts 'nt' OPTION; do
         esac
 
 	# Confirm we actually have logs for the amount of days given
-        dayLogCount=$(ls /var/log/sysstat/sa* -l | egrep 'sa[0-9][0-9]' | wc -l)
+        dayLogCount=$(ls $sar_log_path/sa* -l | egrep 'sa[0-9][0-9]' | wc -l)
         if [ $dayLogCount -lt $dayCount ]
         then
             printf "You Requested %s days of logs, but the system only has %s days stored.\nExiting" "$dayCount" "$dayLogCount"
@@ -265,12 +269,12 @@ while getopts 'nt' OPTION; do
           if [ $startDateNum -gt $todayDateNum ]
           then
               for i in $(eval echo "{$startDateNum..31} {1..$todayDateNum}");do
-                      sar -r -f /var/log/sysstat/sa$i 2>/dev/null | grep Average
+                      sar -r -f $sar_log_path/sa$i 2>/dev/null | grep Average
               done
           
           else [ $startDateNum -lt $todayDateNum ]
               for i in $(eval echo "{$startDateNum..$todayDateNum}");do
-                      sar -r -f /var/log/sysstat/sa$i 2>/dev/null | grep Average
+                      sar -r -f $sar_log_path/sa$i 2>/dev/null | grep Average
               done
           fi | awk '{sum = $2+$5+$6} ; { total += sum; count++ } END { print total/count }'
 	}
@@ -282,8 +286,8 @@ while getopts 'nt' OPTION; do
 
 	# Dump the info
 	info_dump
-        printf "Highest load observed    | %s \n" "$highestLoad"
-        printf "Highest load %% observed  | %s%% \n" "$(color_percent $highestLoadPercent)"
+        printf "Highest load observed    | %s on %s \n" "$highestLoad" "$highestLoadDateTime"
+        printf "Highest load %% observed  | %s%% on %s \n" "$(color_percent $highestLoadPercent)" "$highestLoadDateTime"
         printf "Times CPU was overloaded | %s \n" "$loadBreachCount"
 
 	# DISK Space
@@ -298,4 +302,4 @@ shift "$(($OPTIND -1))"
 extraArgs=$*
 
 # Cleanup
-rm -f /tmp/highestLoad /tmp/date /tmp/loadBreachCount
+rm -f /tmp/highestLoad /tmp/date /tmp/loadBreachCount /tmp/highestLoadDateTime
