@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Author : chrotek
 # TODO   : fix the sar logs variables that i accidentaly hardcoded
-
+#          fix parsing broken because lvm
 # Colors
 LIGHTRED='\033[1;31m'
 GREEN='\033[0;32m'    
