@@ -52,7 +52,7 @@ kb_mb_convert() {
 
 # Check disk usage
 check_disk_usage() {
-  diskmounts=$(lsblk -nl | awk {'print $7'} | grep -vE 'SWAP|/boot/'| awk NF | sort -n)
+  diskmounts=$(lsblk -no MOUNTPOINT | grep -vE 'SWAP')
   longestName=0
 
   # Work out the longest disk name, and buffer the output columns accordingly
@@ -68,7 +68,7 @@ check_disk_usage() {
   # Output the disk info
   printf "%s Disks (%% Full) %s\n" "---" "---"
   for disk in $diskmounts;do
-      percentfull=$(df -h $disk | grep -v "Filesystem"| awk {'print $5'} | tr -d "%")
+      percentfull=$(df -h $disk | egrep -o [0-9]+% | tr -d "%")
       printf "%*s| %s%% \n" -$bufferCharCount "$disk" "$(color_percent $percentfull)"
   done
 }
@@ -137,6 +137,7 @@ calculateHighestCPULoadAndBreaches() {
 
 # Info Dump
 info_dump() {
+    printf "Hostname : %s \n" "$(cat /etc/hostname)"
     printf "%s Memory %s \n" "---" "---"
     printf "Total | %s Mb\n" "$(kb_mb_convert $totalMemory)"
     printf "Used  | %s Mb\n" "$(kb_mb_convert $usedMemory)"
@@ -180,6 +181,7 @@ while getopts 'nth' OPTION; do
       # Convert to decimal
       cpuLoadPercent=$(awk "BEGIN{printf ($cpuLoadPercent1*100);exit}")
       # Print Section
+      printf "Live Resource Consumption for %s \n" "$(date '+%A %d %B at %T')"
       info_dump
       
       ### DISK Space
@@ -197,7 +199,7 @@ while getopts 'nth' OPTION; do
 	exit
       fi     
 
-      # Check SAR installed   # DEBUG
+      # Check SAR installed
       if ! [ -x "$(command -v sar)" ]; then
 	printf "ERROR: sar is not installed.\n"
 	giveUsageThenQuit
