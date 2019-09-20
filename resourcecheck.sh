@@ -137,6 +137,7 @@ calculateHighestCPULoadAndBreaches() {
 
 # Info Dump
 info_dump() {
+#    printf "Hostname : %s \n" "$(cat /etc/hostname)"
     printf "%s Memory %s \n" "---" "---"
     printf "Total | %s Mb\n" "$(kb_mb_convert $totalMemory)"
     printf "Used  | %s Mb\n" "$(kb_mb_convert $usedMemory)"
@@ -180,6 +181,7 @@ while getopts 'nth' OPTION; do
       # Convert to decimal
       cpuLoadPercent=$(awk "BEGIN{printf ($cpuLoadPercent1*100);exit}")
       # Print Section
+      printf "Live Resource Consumption for %s \n" "$(date '+%A %d %B at %T')"
       info_dump
       
       ### DISK Space
