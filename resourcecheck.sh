@@ -137,7 +137,7 @@ calculateHighestCPULoadAndBreaches() {
 
 # Info Dump
 info_dump() {
-#    printf "Hostname : %s \n" "$(cat /etc/hostname)"
+    printf "Hostname : %s \n" "$(cat /etc/hostname)"
     printf "%s Memory %s \n" "---" "---"
     printf "Total | %s Mb\n" "$(kb_mb_convert $totalMemory)"
     printf "Used  | %s Mb\n" "$(kb_mb_convert $usedMemory)"
@@ -199,7 +199,7 @@ while getopts 'nth' OPTION; do
 	exit
       fi     
 
-      # Check SAR installed   # DEBUG
+      # Check SAR installed
       if ! [ -x "$(command -v sar)" ]; then
 	printf "ERROR: sar is not installed.\n"
 	giveUsageThenQuit
