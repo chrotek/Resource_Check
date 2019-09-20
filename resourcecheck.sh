@@ -52,7 +52,7 @@ kb_mb_convert() {
 
 # Check disk usage
 check_disk_usage() {
-  diskmounts=$(lsblk -no MOUNTPOINT)
+  diskmounts=$(lsblk -no MOUNTPOINT | grep -vE 'SWAP')
   longestName=0
 
   # Work out the longest disk name, and buffer the output columns accordingly
