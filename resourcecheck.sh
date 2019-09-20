@@ -52,7 +52,7 @@ kb_mb_convert() {
 
 # Check disk usage
 check_disk_usage() {
-  diskmounts=$(lsblk -nl | awk {'print $7'} | grep -vE 'SWAP|/boot/'| awk NF | sort -n)
+  diskmounts=$(lsblk -no MOUNTPOINT)
   longestName=0
 
   # Work out the longest disk name, and buffer the output columns accordingly
@@ -68,7 +68,7 @@ check_disk_usage() {
   # Output the disk info
   printf "%s Disks (%% Full) %s\n" "---" "---"
   for disk in $diskmounts;do
-      percentfull=$(df -h $disk | grep -v "Filesystem"| awk {'print $5'} | tr -d "%")
+      percentfull=$(df -h $disk | egrep -o [0-9]+% | tr -d "%")
       printf "%*s| %s%% \n" -$bufferCharCount "$disk" "$(color_percent $percentfull)"
   done
 }
