@@ -152,6 +152,11 @@ info_dump() {
 totalMemory=$(grep "MemTotal" /proc/meminfo | awk {'print $2'})
 cpuCoreCount=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}')
 
+if [ $(grep ^flags /proc/cpuinfo | uniq | grep ht > /dev/null ; echo $?) -eq 0 ]; then
+  cpuCoreCount=$(($cpuCoreCount*2))
+fi
+
+
 # Check some args were supplied, if not, re-run with -n for live resources
 if [ $# -eq 0 ]
 then
