@@ -2,6 +2,8 @@
 # Author : chrotek
 # TODO   : 
 #          - Account for servers with more that 1 Physical CPU
+#          - Find a better way to get hostname , /etc/hostname does not always exist
+
 # Colors
 LIGHTRED='\033[1;31m'
 GREEN='\033[0;32m'    
