@@ -2,6 +2,12 @@
 
 Script to analyze resource consumption for a Linux device. 
 
+#### Disclaimer
+    
+    This script is still a work in progress. There are still some bugs as the files it uses aren't always formatted exactly the same way.
+    If you run this and get any errors, don't trust the information it's giving you.
+    You can avoid errors by only requesting today's logs ( replace <options> with tl0 )
+
 #### Usage:
 
     ./resourcecheck.sh <options>
