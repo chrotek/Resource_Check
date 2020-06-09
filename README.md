@@ -4,7 +4,7 @@ Script to analyze resource consumption for a Linux device, using logs generated 
 
 #### Disclaimer / Bugs / Oversights
     
-This script is still a work in progress.  **And still has bugs that I haven't had time to fix**
+This script is still a work in progress.  **And still has bugs that I don't know when/if i'll get time to fix**
 
 --- Memory Bug ---
 
